@@ -1,7 +1,10 @@
 import requests
 import asyncio
 import json
-Authorization = 'qQt+ZMVQZ3c3dzmomq8xeYeuR4akxg51RkeTSi5XRssZkTNwIt'
+import os
+
+Authorization = os.environ['token']
+#Authorization = 'qQt+ZMVQZ3c3dzmomq8xeYeuR4akxg51RkeTSi5XRssZkTNwIt'
 
 
 async def fetch_profile_data():
