@@ -1,6 +1,5 @@
 import requests
 import asyncio
-import websockets
 import json
 Authorization = 'qQt+ZMVQZ3c3dzmomq8xeYeuR4akxg51RkeTSi5XRssZkTNwIt'
 
