@@ -2,9 +2,37 @@ import requests
 import asyncio
 import json
 import os
+import hashlib
+import hmac
+import time
+import datetime
+import hashlib
+import hmac
+import base64
 
-Authorization = os.environ['token']
-# Replace 'YOUR_BOT_TOKEN' with your actual bot token
+
+
+api_key = 'IN2t13uftIUkZoOfCgbcQCYTaoeEEf'
+api_secret = '3mgt1SR3Fi5Qa1HALTQTw340kGQgxtHNub3Wqm2ekmVE0TLSMyloZYbDZFsU'
+
+def generate_signature(method, endpoint, payload):
+    timestamp = str(int(time.time()))
+    signature_data = method + timestamp + endpoint + payload
+    message = bytes(signature_data, 'utf-8')
+    secret = bytes(api_secret, 'utf-8')
+    hash = hmac.new(secret, message, hashlib.sha256)
+    return hash.hexdigest(), timestamp
+
+def get_time_stamp():
+    d = datetime.datetime.utcnow()
+    epoch = datetime.datetime(1970,1,1)
+    return str(int((d - epoch).total_seconds()))
+
+
+
+
+
+
 BOT_TOKEN = '6903959874:AAG6PR1Uq44pLISk3olhHUyl53Npk9ogKqk'
 # Replace 'YOUR_CHAT_ID' with the chat ID you want to send the message to
 CHAT_ID = '311396636'
@@ -30,14 +58,21 @@ async def place_target_order(order_type,side,order_product,order_size,stop_order
     }
     print(payload)
     # Fetch data from REST API
-   
-    
+   # Fetch data from REST API
+    # Fetch data from REST API
+    method = 'POST'
+    endpoint = '/v2/orders'
+    payload_str = json.dumps(payload)
+    signature, timestamp = generate_signature(method, endpoint, payload_str)
+    timestamp = get_time_stamp() 
 
     headers = {
-      'Authorization': Authorization, 
-      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4.1 Safari/605.1.15',
-      'Content-Type': 'application/json'
-    }
+         'api-key': api_key,
+         'timestamp': timestamp,
+         'signature': signature,
+         'User-Agent': 'rest-client',
+         'Content-Type': 'application/json'
+           }
 
     # Send the POST request with the payload
     response = requests.post('https://cdn.india.deltaex.org/v2/orders', json=payload, headers=headers)
@@ -68,14 +103,25 @@ async def place_order(order_type,side,order_product_id,order_size,stop_order_typ
         "size": order_size
     }
     
+
     # Fetch data from REST API
     
 
+    # Fetch data from REST API
+    # Fetch data from REST API
+    method = 'POST'
+    endpoint = '/v2/orders'
+    payload_str = json.dumps(payload)
+    signature, timestamp = generate_signature(method, endpoint, payload_str)
+    timestamp = get_time_stamp() 
+
     headers = {
-      'Authorization': Authorization, 
-      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4.1 Safari/605.1.15',
-      'Content-Type': 'application/json'
-    }
+         'api-key': api_key,
+         'timestamp': timestamp,
+         'signature': signature,
+         'User-Agent': 'rest-client',
+         'Content-Type': 'application/json'
+           }
 
     # Send the POST request with the payload
     response = requests.post('https://cdn.india.deltaex.org/v2/orders', json=payload, headers=headers)
@@ -97,18 +143,25 @@ async def place_order(order_type,side,order_product_id,order_size,stop_order_typ
 
 async def fetch_position_data():
     while True:
-        # Fetch data from REST API
-        
+        payload = ''
+        method = 'GET'
+        timestamp = get_time_stamp() 
+        method = 'GET'
+        endpoint = '/v2/positions/margined'
+        payload_str = json.dumps(payload)
+        signature, timestamp = generate_signature(method, endpoint, payload)
 
         headers = {
-          'Authorization': Authorization, 
-          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4.1 Safari/605.1.15',
-          'Content-Type': 'application/json'
-        }
+         'api-key': api_key,
+         'timestamp': timestamp,
+         'signature': signature,
+         'User-Agent': 'rest-client',
+         'Content-Type': 'application/json'
+  }
 
         r = requests.get('https://cdn.india.deltaex.org/v2/positions/margined', headers=headers)
         position_data = r.json()  # Extract JSON data using .json() method
-         #print("Position Data:", position_data)
+        print("Position Data:", position_data)
         # Extract product_id and realized_pnl from each result
         # Extract data from each dictionary in the 'result' list
         for result in position_data["result"]:
@@ -177,13 +230,18 @@ def send_message(message):
 
 
 async def main():
-    # Run WebSocket connection coroutine
-    #socket_task = asyncio.create_task(connect_to_socket())
-    # Run profile data fetching coroutine
-    profile_task = asyncio.create_task(fetch_profile_data())
-    position_task = asyncio.create_task(fetch_position_data())
-    # Wait for both tasks to complete
-    await asyncio.gather(position_task, profile_task)
+    while True:
+        try:
+            profile_task = asyncio.create_task(fetch_profile_data())
+            position_task = asyncio.create_task(fetch_position_data())
+            await asyncio.gather(position_task, profile_task)
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            # Optionally, you can add code here to handle the error, such as logging it
+            # or sending a notification
+        finally:
+            # Optionally, you can add a delay here before retrying
+            await asyncio.sleep(10)
     
 
 # Run the main coroutine
