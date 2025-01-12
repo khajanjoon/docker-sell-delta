@@ -192,10 +192,10 @@ async def fetch_position_data():
            print()  # Add an empty line for better readability between each dictionary's data
 
            # Percentage of entry price
-           percentage = int(size)*.75 # Assuming 10% for demonstration purposes
+           percentage = int(size)*2 # Assuming 10% for demonstration purposes
            price_value = float(entry_price)-(float(entry_price) * (percentage / 100)) 
            tick_size = 0.05
-           target = float(mark_price)*2/100-float(mark_price)
+           target = float(mark_price)*20/100-float(mark_price)
            target =round(target* 20) / 20
            target_value = abs(target)
            
