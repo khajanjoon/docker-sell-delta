@@ -47,6 +47,7 @@ async def fetch_profile_data():
 async def place_target_order(order_type,side,order_product,order_size,stop_order_type,stop_price):
     # Define the payload
     payload = {
+        "limit_price": stop_price,
         "order_type": order_type,
         "side": side,
         "product_id": int(order_product),
@@ -136,7 +137,7 @@ async def place_order(order_type,side,order_product_id,order_size,stop_order_typ
           f"Size: {payload['size']}😀"
         send_message(message)
         print("Order placed successfully.")
-        await place_target_order("market_order","buy",order_product_id,1,"take_profit_order",target_value )
+        await place_target_order("limit_order","buy",order_product_id,1,"take_profit_order",target_value )
     else:
         print("Failed to place order. Status code:", response.status_code)
       
@@ -161,7 +162,7 @@ async def fetch_position_data():
 
         r = requests.get('https://cdn.india.deltaex.org/v2/positions/margined', headers=headers)
         position_data = r.json()  # Extract JSON data using .json() method
-        print("Position Data:", position_data)
+        # print("Position Data:", position_data)
         # Extract product_id and realized_pnl from each result
         # Extract data from each dictionary in the 'result' list
         for result in position_data["result"]:
@@ -200,6 +201,8 @@ async def fetch_position_data():
            target_value = abs(target)
            
            print( price_value)
+           print(target_value)
+        
            message = f"Symbol: {product_symbol}\n" \
           f"Size: {size}\n" \
           f"Unrealized PnL: {round((float(unrealized_pnl) ), 2) }\n" \
