@@ -12,8 +12,8 @@ import base64
 
 
 
-api_key = 'IN2t13uftIUkZoOfCgbcQCYTaoeEEf'
-api_secret = '3mgt1SR3Fi5Qa1HALTQTw340kGQgxtHNub3Wqm2ekmVE0TLSMyloZYbDZFsU'
+api_key = 'WqLMWdFHsYrWt5dHELyBkZXzVw54s4'
+api_secret = 'ux8394Juap4ZzvA3oXPYkgVaR4MAza6BwsKWLTOVCFNcv5wgPi3HAb0Pqirm'
 
 def generate_signature(method, endpoint, payload):
     timestamp = str(int(time.time()))
