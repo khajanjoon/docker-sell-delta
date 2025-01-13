@@ -210,7 +210,7 @@ async def fetch_position_data():
           f"Next_Entry: {round((float(price_value) ), 2) }\n" \
           f"Mark Price: {round((float(mark_price) ), 2) }\n"
             
-           send_message(message)
+           #send_message(message)
            print()  # Add an empty line for better readability between each dictionary's data
            if (float(mark_price) > price_value) :
 
