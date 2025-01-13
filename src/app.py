@@ -12,7 +12,7 @@ import base64
 import paho.mqtt.client as mqtt
 
 # MQTT Broker details
-BROKER_ADDRESS = "127.0.0.1"  # Replace with your MQTT broker address
+BROKER_ADDRESS = "103.26.206.37"  # Replace with your MQTT broker address
 BROKER_PORT = 1883
 MQTT_USERNAME = "khajan"  # Replace with MQTT username if required
 MQTT_PASSWORD = "joon1234"  # Replace with MQTT password if required
