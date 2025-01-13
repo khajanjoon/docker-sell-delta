@@ -9,11 +9,152 @@ import datetime
 import hashlib
 import hmac
 import base64
+import paho.mqtt.client as mqtt
+
+# MQTT Broker details
+BROKER_ADDRESS = "127.0.0.1"  # Replace with your MQTT broker address
+BROKER_PORT = 1883
+MQTT_USERNAME = "khajan"  # Replace with MQTT username if required
+MQTT_PASSWORD = "joon1234"  # Replace with MQTT password if required
 
 
+# MQTT Discovery base topic for Home Assistant
+MQTT_DISCOVERY_PREFIX = "homeassistant/sensor"
 
 api_key = 'WqLMWdFHsYrWt5dHELyBkZXzVw54s4'
 api_secret = 'ux8394Juap4ZzvA3oXPYkgVaR4MAza6BwsKWLTOVCFNcv5wgPi3HAb0Pqirm'
+
+
+def send_mqtt_message(topic, payload):
+    client = mqtt.Client()
+    client.username_pw_set(MQTT_USERNAME, MQTT_PASSWORD)  # Set username and password if required
+    client.connect(BROKER_ADDRESS, BROKER_PORT, 60)
+
+    message = json.dumps(payload)
+    result = client.publish(topic, message)
+
+    if result.rc == 0:
+        print(f"MQTT message sent successfully: {message}")
+    else:
+        print(f"Failed to send MQTT message: {result.rc}")
+
+    client.disconnect()
+
+def send_home_assistant_sensor(sensor_name, state, unit, device_class, unique_id, topic):
+    """
+    Publish sensor data to Home Assistant via MQTT Discovery.
+
+    Args:
+        sensor_name (str): Friendly name of the sensor.
+        state (str): Current state of the sensor.
+        unit (str): Unit of measurement (e.g., USD, INR).
+        device_class (str): Home Assistant device class (e.g., monetary).
+        unique_id (str): Unique ID for the sensor.
+        topic (str): Topic to publish the sensor state.
+    """
+    config_topic = f"{MQTT_DISCOVERY_PREFIX}/{unique_id}/config"
+    state_topic = f"{MQTT_DISCOVERY_PREFIX}/{unique_id}/state"
+
+    # Home Assistant MQTT Discovery configuration payload
+    config_payload = {
+        "name": sensor_name,
+        "state_topic": state_topic,
+        "unit_of_measurement": unit,
+        "device_class": device_class,
+        "unique_id": unique_id,
+        "value_template": "{{ value_json.state }}",
+    }
+
+    # Publish the discovery configuration
+    send_mqtt_message(config_topic, config_payload)
+
+    # Publish the state
+    send_mqtt_message(state_topic, {"state": state})
+
+async def fetch_balance_data():
+    while True:
+        method = 'GET'
+        endpoint = '/v2/wallet/balances'
+        payload = ''
+        payload_str = json.dumps(payload)
+        signature, timestamp = generate_signature(method, endpoint, payload)
+
+        headers = {
+            'api-key': api_key,
+            'timestamp': timestamp,
+            'signature': signature,
+            'User-Agent': 'rest-client',
+            'Content-Type': 'application/json'
+        }
+
+        try:
+            response = requests.get(
+                'https://api.india.delta.exchange/v2/wallet/balances',
+                headers=headers
+            )
+            if response.status_code == 200:
+                data = response.json()
+                print("Balance Data:", data)
+
+                # Extract relevant balance details
+                meta = data.get("meta", {})
+                result = data.get("result", [{}])[0]  # Get the first result if it exists
+
+                net_equity = float(meta.get("net_equity", 0))
+                blocked_margin = float(result.get("blocked_margin", 0))
+                net_plus_margin_inr = (net_equity*85 + blocked_margin) # Convert to INR
+                trading_balance_inr = float(result.get("available_balance"))*85
+                # Define sensor data for Home Assistant
+                sensors = [
+                    {
+                        "name": "Net Equity",
+                        "state": net_equity,
+                        "unit": "USD",
+                        "device_class": "monetary",
+                        "unique_id": "Available Balance Without PnL"
+                    },
+                    {
+                        "name": "Available Balance For Algo Trading",
+                        "state": trading_balance_inr,
+                        "unit": "INR",
+                        "device_class": "monetary",
+                        "unique_id": "available_balance_for_algo_trading"
+                    },
+                    {
+                        "name": "Blocked Margin",
+                        "state": blocked_margin,
+                        "unit": "INR",
+                        "device_class": "monetary",
+                        "unique_id": "blocked_margin"
+                    },
+            
+                    {
+                        "name": "Total  Balance In INR With PnL",
+                        "state": round(net_plus_margin_inr, 2),
+                        "unit": "INR",
+                        "device_class": "monetary",
+                        "unique_id": "total_avilable_balance_in_inr"
+                    }
+                ]
+
+                # Send each sensor to Home Assistant via MQTT
+                for sensor in sensors:
+                    send_home_assistant_sensor(
+                        sensor_name=sensor["name"],
+                        state=sensor["state"],
+                        unit=sensor["unit"],
+                        device_class=sensor["device_class"],
+                        unique_id=sensor["unique_id"],
+                        topic=f"{MQTT_DISCOVERY_PREFIX}/{sensor['unique_id']}/state",
+                    )
+            else:
+                print(f"Failed to fetch balance data. Status Code: {response.status_code}, Response: {response.text}")
+
+        except Exception as e:
+            print(f"An error occurred while fetching balance data: {e}")
+
+        await asyncio.sleep(10)
+
 
 def generate_signature(method, endpoint, payload):
     timestamp = str(int(time.time()))
@@ -237,7 +378,8 @@ async def main():
         try:
             profile_task = asyncio.create_task(fetch_profile_data())
             position_task = asyncio.create_task(fetch_position_data())
-            await asyncio.gather(position_task, profile_task)
+            balance_task =  asyncio.create_task(fetch_balance_data())
+            await asyncio.gather(position_task, profile_task,balance_task)
         except Exception as e:
             print(f"An error occurred: {e}")
             # Optionally, you can add code here to handle the error, such as logging it
