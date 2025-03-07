@@ -127,7 +127,7 @@ async def place_order(order_type,side,order_product_id,order_size,stop_order_typ
           f"Reduce Only: {'Yes' if payload['reduce_only'] else 'No'}\n" \
           f"Size: {payload['size']}😀"
         send_message(message)
-        await place_target_order("market_order","sell",order_product_id,1,"take_profit_order",target_value )
+        await place_target_order("market_order","buy",order_product_id,1,"take_profit_order",target_value )
     else:
         send_message(response)
 
