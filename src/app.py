@@ -206,7 +206,7 @@ async def fetch_position_data():
             
             print("ready to Sell")
             print()  # Add an empty line for better readability between each dictionary's data
-            #await place_order("market_order","sell",product_id,1,0,target_value )  
+            await place_order("market_order","sell",product_id,1,0,target_value )  
             print()  # Add an empty line for better readability between each dictionary's data
    
         # Wait for 60 seconds before fetching again
