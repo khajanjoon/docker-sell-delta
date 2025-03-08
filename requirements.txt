@@ -2,3 +2,4 @@ websockets
 requests
 asyncio
 paho-mqtt
+python-dotenv
